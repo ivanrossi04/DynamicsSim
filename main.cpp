@@ -2,6 +2,7 @@
 
 #define _USE_MATH_DEFINES
 #include <iostream>
+#include "mathss.hpp"
 #include <cmath>
 #include <vector>
 #include <GL/glew.h>
@@ -11,47 +12,35 @@ static unsigned int axis;
 static float axis_length = 200.0;
 static float angle = 0.0;
 static float zoom = 1.0;
-static float cameraPos[3] = {0.0, 0.0, 0.0};
+static Vec<float> cameraPos(3, 0.0);
 
 static float R = 5; // ball radius expressed in m
 static const float mass = 0.01; // mass expressed in kg
-static float currentPos[3] = {0.0, 0.0, 0.0}; // x_0 expressed in m
-static float currentVel[3] = {0.0, 0.0, 0.0}; // v_0 expressed in m/s
+static Vec<float> currentPos({ 0.0, 100.0, 0.0 }); // x_0 expressed in m
+static Vec<float> currentVel({ 10.0, 10.0, 0.0 }); // x_0 expressed in m/s
 static float currentTime = 0; // t_0 expressed in s
 
-static float deltaTime = 0.001; // deltat expressed in s
+static float deltaTime = 0.01; // deltat expressed in s
 static float deltaFrame = 0.02; // deltat expressed in s
 
-std::vector<float*> trajectory;
+std::vector<Vec<float>> trajectory;
 
 // forces applied
 static const float g = 9.806;
 static const float k = 0.12;
-float* f(float x[3], float v[3], float t) {
-	return new float[3]{0.0, 0.0, 0.0};
+Vec<float> f(Vec<float> x, Vec<float> v, float t) {
+	return Vec<float>({0.0, -mass * g, 0.0});
 }
 
 // Routine to increase the rotation angle.
 void increaseTime() {
-	float* prevPos;
+	Vec<float> prevPos = currentPos;
+	trajectory.push_back(prevPos);
+
 	currentTime += deltaTime;
-	prevPos = currentPos;
-
-	for (int i = 0; i < 3; i++) {
-		float* force = f(prevPos, currentVel, currentTime);
-		currentPos[i] = currentPos[i] + currentVel[i] * deltaTime;
-		currentVel[i] = currentVel[i] + force[i] / mass * deltaTime;
-
-		// std::cout << "t = " << currentTime << "\tx: " << currentPos[i] << ",\tv: " << currentVel[i] << "\n"; // debug statement
-	}
-
-	trajectory.push_back(new float[3] {currentPos[0], currentPos[1], currentPos[2]});
-}
-
-// Routine to draw a bitmap character string.
-void writeBitmapString(void* font, char* string) {
-	char* c;
-	for (c = string; *c != '\0'; c++) glutBitmapCharacter(font, *c);
+	Vec<float> force = f(prevPos, currentVel, currentTime);
+	currentPos += currentVel * deltaTime;
+	currentVel += force * (1 / mass) * deltaTime;
 }
 
 // Routine to animate with a recursive call made after animationPeriod msecs.
