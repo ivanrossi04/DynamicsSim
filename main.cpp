@@ -15,9 +15,9 @@ static float zoom = 1.0;
 static Vec<float> cameraPos(3, 0.0);
 
 static float R = 5; // ball radius expressed in m
-static const float mass = 0.01; // mass expressed in kg
-static Vec<float> currentPos({ 0.0, 100.0, 0.0 }); // x_0 expressed in m
-static Vec<float> currentVel({ 10.0, 10.0, 0.0 }); // x_0 expressed in m/s
+static const float mass = 1; // mass expressed in kg
+static Vec<float> currentPos({ 50.0, 50.0, 0.0 }); // x_0 expressed in m
+static Vec<float> currentVel({ -50.0, 50.0, 0.0 }); // x_0 expressed in m/s
 static float currentTime = 0; // t_0 expressed in s
 
 static float deltaTime = 0.01; // deltat expressed in s
@@ -27,13 +27,14 @@ std::vector<Vec<float>> trajectory;
 
 // forces applied
 static const float g = 9.806;
-static const float k = 0.12;
+static const float k = 1500000;
 Vec<float> f(Vec<float> x, Vec<float> v, float t) {
-	return Vec<float>({0.0, -mass * g, 0.0});
+	return (- k / (float)pow(sqrt(x.getNorm()), 3)) * x;
 }
 
 // Routine to increase the rotation angle.
 void increaseTime() {
+	/* explicit eluer method
 	Vec<float> prevPos = currentPos;
 	trajectory.push_back(prevPos);
 
@@ -41,6 +42,26 @@ void increaseTime() {
 	Vec<float> force = f(prevPos, currentVel, currentTime);
 	currentPos += currentVel * deltaTime;
 	currentVel += force * (1 / mass) * deltaTime;
+	*/
+
+	// midpoint rule (RK2)
+	trajectory.push_back(Vec<float>(currentPos));
+	Vec<float> k1x, k1v, k2x, k2v;
+
+	Vec<float> force = f(currentPos, currentVel, currentTime);
+	k1x = currentVel;
+	k1v = force * (1 / mass);
+
+	Vec<float> nextPos = currentPos + deltaTime * k1x;
+	Vec<float> nextVel = currentVel + deltaTime * k1v;
+
+	force = f(nextPos, nextVel, currentTime + deltaTime);
+	k2x = nextVel;
+	k2v = force * (1 / mass);
+
+
+	currentPos += (k1x + k2x) * (deltaTime / 2);
+	currentVel += (k1v + k2v) * (deltaTime / 2);
 }
 
 // Routine to animate with a recursive call made after animationPeriod msecs.
