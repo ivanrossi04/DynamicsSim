@@ -2,9 +2,8 @@
 
 #define _USE_MATH_DEFINES
 #include <iostream>
-#include "mathss.hpp"
-#include <cmath>
 #include <vector>
+#include "mathss.hpp"
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 
@@ -17,7 +16,7 @@ static Vec<float> cameraPos(3, 0.0);
 static float R = 5; // ball radius expressed in m
 static const float mass = 1; // mass expressed in kg
 static Vec<float> currentPos({ 50.0, 50.0, 0.0 }); // x_0 expressed in m
-static Vec<float> currentVel({ -50.0, 50.0, 0.0 }); // x_0 expressed in m/s
+static Vec<float> currentVel({50.0, -50.0, 0.0}); // x_0 expressed in m/s
 static float currentTime = 0; // t_0 expressed in s
 
 static float deltaTime = 0.01; // deltat expressed in s
@@ -27,9 +26,12 @@ std::vector<Vec<float>> trajectory;
 
 // forces applied
 static const float g = 9.806;
-static const float k = 1500000;
+static const float k = 1.2;
+static const float G = 900000;
 Vec<float> f(Vec<float> x, Vec<float> v, float t) {
-	return (- k / (float)pow(sqrt(x.getNorm()), 3)) * x;
+	// return -k * v + Vec<float>({0.0, -mass * g, 0.0}); // gravitational force with air resistance;
+	// return - k * x; // hooke's law (spring costant is equal in every direction)
+	return (- G / (float)pow(sqrt(x.getNorm()), 3)) * x; // kepler's problem
 }
 
 // Routine to increase the rotation angle.
@@ -44,7 +46,7 @@ void increaseTime() {
 	currentVel += force * (1 / mass) * deltaTime;
 	*/
 
-	// midpoint rule (RK2)
+	/* midpoint rule(RK2)
 	trajectory.push_back(Vec<float>(currentPos));
 	Vec<float> k1x, k1v, k2x, k2v;
 
@@ -62,6 +64,31 @@ void increaseTime() {
 
 	currentPos += (k1x + k2x) * (deltaTime / 2);
 	currentVel += (k1v + k2v) * (deltaTime / 2);
+	*/
+
+	// Runge-Kutta 4
+	trajectory.push_back(Vec<float>(currentPos));
+	static Vec<float> kx[4], kv[4];
+
+	kx[0] = currentVel;
+	static Vec<float> force = f(currentPos, kx[0], currentTime);
+	kv[0] = force * (1 / mass);
+
+	kx[1] = currentVel + kv[0] * (deltaTime / 2);
+	force = f(currentPos + kx[0] * (deltaTime/2), kx[1], currentTime + deltaTime / 2);
+	kv[1] = force * (1 / mass);
+
+	kx[2] = currentVel + kv[1] * (deltaTime / 2);
+	force = f(currentPos + kx[1] * (deltaTime / 2), kx[2], currentTime + deltaTime / 2);
+	kv[2] = force * (1 / mass);
+
+	kx[3] = currentVel + kv[2] * deltaTime;
+	force = f(currentPos + kx[2] * deltaTime, kx[3], currentTime + deltaTime);
+	kv[3] = force * (1 / mass);
+
+	currentTime += deltaTime;
+	currentPos += deltaTime / 6 * (kx[0] + 2.0f * kx[1] + 2.0f * kx[2] + kx[3]);
+	currentVel += deltaTime / 6 * (kv[0] + 2.0f * kv[1] + 2.0f * kv[2] + kv[3]);
 }
 
 // Routine to animate with a recursive call made after animationPeriod msecs.
