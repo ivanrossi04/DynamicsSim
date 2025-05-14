@@ -9,6 +9,43 @@
 
 static unsigned int axis;
 static float axis_length = 200.0;
+
+static unsigned int square;
+static float border_width = 0.1;
+
+void buildCustomShapes() {
+
+	axis = glGenLists(1);
+	glNewList(axis, GL_COMPILE);
+	glBegin(GL_LINES);
+	glColor3f(0.0, 0.0, 0.0);
+	glVertex3f(0.0, -axis_length, 0.0);
+	glVertex3f(0.0, axis_length, 0.0);
+
+	float width;
+	for (size_t i = 0; i <= axis_length / 5; i++) {
+		width = i % 5 ? 2.0 : 4.0;
+		glVertex3f(-width, -axis_length + i * 10.0, 0.0);
+		glVertex3f(width, -axis_length + i * 10.0, 0.0);
+
+		glVertex3f(0.0, -axis_length + i * 10.0, -width);
+		glVertex3f(0.0, -axis_length + i * 10.0, width);
+	}
+	glEnd();
+	glEndList();
+
+	square = glGenLists(1);
+	glNewList(square, GL_COMPILE);
+	glBegin(GL_POLYGON);
+	glVertex3f(-1.0, -1.0, 0.0);
+	glVertex3f(1.0, -1.0, 0.0);
+	glVertex3f(1.0, 1.0, 0.0);
+	glVertex3f(-1.0, 1.0, 0.0);
+	glEnd();
+	glEndList();
+}
+
+
 static float angle = 0.0;
 static float zoom = 1.0;
 static Vec<float> cameraPos(3, 0.0);
@@ -91,27 +128,34 @@ void increaseTime() {
 	currentVel += deltaTime / 6 * (kv[0] + 2.0f * kv[1] + 2.0f * kv[2] + kv[3]);
 }
 
-// Routine to animate with a recursive call made after animationPeriod msecs.
-int incrementCounter = 0;
-void animate(int i) {
-	increaseTime();
-	incrementCounter++;
+void drawSolidSphere(float radius, int slices, int stacks) {
+	for (int i = 0; i < stacks; ++i) {
+		float lat0 = M_PI * (-0.5 + (float)i / stacks);
+		float z0 = sin(lat0), zr0 = cos(lat0);
 
-	if (incrementCounter >= deltaFrame / deltaTime) {
-		glutPostRedisplay();
-		incrementCounter = 0;
+		float lat1 = M_PI * (-0.5 + (float)(i + 1) / stacks);
+		float z1 = sin(lat1), zr1 = cos(lat1);
+
+		glBegin(GL_QUAD_STRIP);
+		for (int j = 0; j <= slices; ++j) {
+			float lng = 2 * M_PI * (float)(j - 1) / slices;
+			float x = cos(lng), y = sin(lng);
+
+			glNormal3f(x * zr0, y * zr0, z0);
+			glVertex3f(radius * x * zr0, radius * y * zr0, radius * z0);
+			glNormal3f(x * zr1, y * zr1, z1);
+			glVertex3f(radius * x * zr1, radius * y * zr1, radius * z1);
+		}
+		glEnd();
 	}
-
-	glutTimerFunc(deltaTime * 1000, animate, 1);
 }
 
 void drawScene() {
-
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClearColor(1.0, 1.0, 1.0, 0.0);
 
 	glLoadIdentity();
-	glTranslatef(cameraPos[0], cameraPos[1], cameraPos[2] -200.0);
+	glTranslatef(cameraPos[0], cameraPos[1], cameraPos[2] - 200.0);
 	glRotatef(angle, 0.0, 1.0, 0.0);
 	glScalef(zoom, zoom, zoom);
 
@@ -121,18 +165,12 @@ void drawScene() {
 	// -- Draw Axis --
 	glPushMatrix();
 	glCallList(axis); // Execute display list: y axis
-	glRasterPos3f(-10.0, axis_length - 10.0, - 10.0);
-	glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, 'y');
 
 	glRotatef(-90, 0.0, 0.0, 1.0);
-	glRasterPos3f(-10.0, axis_length - 10.0, -10.0);
-	glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, 'x');
-	glCallList(axis); // Execute display list: x axis
+	glCallList(axis); // x axis
 
 	glRotatef(90, 1.0, 0.0, 0.0);
-	glRasterPos3f(-10.0, axis_length - 10.0, -10.0);
-	glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, 'z');
-	glCallList(axis); // Execute display list: z axis
+	glCallList(axis); // z axis
 	glPopMatrix();
 
 	// -- Draw Trajectory --
@@ -146,42 +184,20 @@ void drawScene() {
 
 	// -- Draw Ball --
 	glTranslatef(currentPos[0], currentPos[1], currentPos[2]);
-	glutSolidSphere(5.0, 20, 20);
-	
+	drawSolidSphere(5.0, 20, 20);
 
 	glFlush();
 }
 
 // Initialization routine
-void setup(void) {
-
-	axis = glGenLists(1); // Return a list index.
-	// Begin create a display list.
-	glNewList(axis, GL_COMPILE);
-	glBegin(GL_LINES);
-	glColor3f(0.0, 0.0, 0.0);
-	glVertex3f(0.0, -axis_length, 0.0);
-	glVertex3f(0.0, axis_length, 0.0);
-
-	float width;
-	for (size_t i = 0; i <= axis_length / 5; i++) {
-		width = i % 5 ? 2.0 : 4.0;
-		glVertex3f(-width, -axis_length + i * 10.0, 0.0);
-		glVertex3f(width, -axis_length + i * 10.0, 0.0);
-
-		glVertex3f(0.0, -axis_length + i * 10.0, -width);
-		glVertex3f(0.0, -axis_length + i * 10.0, width);
-	}
-	glEnd();
-	glEndList();
-	// End create a display list.
-
+void setup() {
+	buildCustomShapes();
 	glEnable(GL_DEPTH_TEST);
 	glClearColor(1.0, 1.0, 1.0, 0.0);
 }
 
 // OpenGL window reshape routine.
-void resize(int w, int h) {
+void resize(GLFWwindow* window, int w, int h) {
 	glViewport(0, 0, w, h);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -190,69 +206,96 @@ void resize(int w, int h) {
 	glLoadIdentity();
 }
 
-// Keyboard input processing routine.
-void keyInput(unsigned char key, int x, int y) {
-	switch (key) {
-	case 27:
-		exit(0);
-	case 'y':
-		angle++;
-		break;
-	case 'Y':
-		angle--;
-		break;
-	case '+':
-		zoom*=1.1;
-		break;
-	case '-':
-		zoom/=1.1;
-		break;
-	default:
-		break;
+void keyInput(GLFWwindow* window, int key, int scancode, int action, int mods) {
+	if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+		switch (key) {
+		case GLFW_KEY_ESCAPE:
+			glfwSetWindowShouldClose(window, GLFW_TRUE);
+			break;
+		case GLFW_KEY_Y:
+			if (mods & GLFW_MOD_SHIFT)
+				angle--;
+			else
+				angle++;
+			break;
+		case GLFW_KEY_KP_ADD:
+		case GLFW_KEY_EQUAL:
+			zoom *= 1.1;
+			break;
+		case GLFW_KEY_KP_SUBTRACT:
+		case GLFW_KEY_MINUS:
+			zoom /= 1.1;
+			break;
+		case GLFW_KEY_DOWN:
+			cameraPos[1]++;
+			break;
+		case GLFW_KEY_UP:
+			cameraPos[1]--;
+			break;
+		case GLFW_KEY_LEFT:
+			cameraPos[0]++;
+			break;
+		case GLFW_KEY_RIGHT:
+			cameraPos[0]--;
+			break;
+		default:
+			break;
+		}
 	}
 }
 
-// Callback routine for non-ASCII key entry.
-void specialKeyInput(int key, int x, int y) {
-	switch (key)
-	{
-	case GLUT_KEY_DOWN:
-		cameraPos[1]++;
-		break;
-	case GLUT_KEY_UP:
-		cameraPos[1]--;
-		break;
-	case GLUT_KEY_LEFT:
-		cameraPos[0]++;
-		break;
-	case GLUT_KEY_RIGHT:
-		cameraPos[0]--;
-		break;
-	default:
-		break;
+int main() {
+	if (!glfwInit()) {
+		std::cerr << "Failed to initialize GLFW\n";
+		return -1;
 	}
-}
 
-// Main routine.
-int main(int argc, char** argv) {
-	glutInit(&argc, argv);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
 
-	glutInitContextVersion(4, 3);
-	glutInitContextProfile(GLUT_COMPATIBILITY_PROFILE);
+	GLFWwindow* window = glfwCreateWindow(600, 600, "Doing Physics!", nullptr, nullptr);
+	if (!window) {
+		std::cerr << "Failed to create GLFW window\n";
+		glfwTerminate();
+		return -1;
+	}
+	glfwMakeContextCurrent(window);
 
-	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA);
-	glutInitWindowSize(500, 500);
-	glutInitWindowPosition(100, 100);
-	glutCreateWindow("Doing Physics!");
-	glutDisplayFunc(drawScene);
-	glutReshapeFunc(resize);
-	glutKeyboardFunc(keyInput);
-	glutSpecialFunc(specialKeyInput);
-
-	glewExperimental = GL_TRUE;
-	glewInit();
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+		std::cerr << "Failed to initialize GLAD\n";
+		return -1;
+	}
 
 	setup();
-	animate(1);
-	glutMainLoop();
+
+	glfwSetFramebufferSizeCallback(window, resize);
+	resize(window, 600, 600); // Set initial viewport size
+
+	glfwSetKeyCallback(window, keyInput);
+
+	// Animation timing
+	double lastTime = glfwGetTime();
+	double accumulator = 0.0;
+
+	while (!glfwWindowShouldClose(window)) {
+		double currentTime = glfwGetTime();
+		double frameTime = currentTime - lastTime;
+
+		lastTime = currentTime;
+		accumulator += frameTime;
+
+		while (accumulator >= deltaTime) {
+			increaseTime();
+			accumulator -= deltaTime;
+		}
+
+		drawScene();
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+	}
+
+	glfwDestroyWindow(window);
+	glfwTerminate();
+	return 0;
 }
