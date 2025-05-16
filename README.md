@@ -11,8 +11,8 @@ Also using my linear algebra library, [Mathss-Library](https://github.com/ivanro
 ### TODO LIST
 ==Fix display issues==
 - [ ] Camera rotation: the camera should be able to move and rotate in all directions
-- [ ] Camera smoothness: right now it feels a bit clunky in it's movement, so I might implement some sort of smoothing in the movement speed
-- [ ] Window resizing: resizing the window streches out the displayed scene, which is not intended
+- [x] Camera smoothness: right now it feels a bit clunky in it's movement, so I might implement some sort of smoothing in the movement speed
+- [x] Window resizing: resizing the window streches out the displayed scene, which is not intended
 - [ ] ...
 
 ==Implement a system that allows the user to apply forces at runtime (possibly using ImGui library to display interactable elements)==
@@ -21,6 +21,6 @@ Also using my linear algebra library, [Mathss-Library](https://github.com/ivanro
 - [ ] Make an info banner to show the camera commands
 - [ ] Implement another page banner where forces can be applied (ideally it should be a drag & drop feature, but more precise prerequisites or custom forces should be possible to do)
 
-==Deal with corner cases (what to do when the material point exits the virtual space, ...) and debug if needed==
+==Deal with corner cases (what to do when the material point exits the virtual space, deltaTime management) and debug if needed==
 
 **Part 2:** Deal with more particles :)

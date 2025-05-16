@@ -2,10 +2,15 @@
 
 #define _USE_MATH_DEFINES
 #include <iostream>
+
 #include <vector>
 #include "mathss.hpp"
-#include <GL/glew.h>
-#include <GL/freeglut.h>
+
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+#include "camera.hpp"
+
+static CameraController camera;
 
 static unsigned int axis;
 static float axis_length = 200.0;
@@ -45,18 +50,13 @@ void buildCustomShapes() {
 	glEndList();
 }
 
-
-static float angle = 0.0;
-static float zoom = 1.0;
-static Vec<float> cameraPos(3, 0.0);
-
 static float R = 5; // ball radius expressed in m
 static const float mass = 1; // mass expressed in kg
-static Vec<float> currentPos({ 50.0, 50.0, 0.0 }); // x_0 expressed in m
-static Vec<float> currentVel({50.0, -50.0, 0.0}); // x_0 expressed in m/s
+static Vec<float> currentPos({ 55.0, 0.0, 0.0 }); // x_0 expressed in m
+static Vec<float> currentVel({70.0, 70.0, 0.0}); // x_0 expressed in m/s
 static float currentTime = 0; // t_0 expressed in s
 
-static float deltaTime = 0.01; // deltat expressed in s
+static float deltaTime = 0.001; // deltat expressed in s
 static float deltaFrame = 0.02; // deltat expressed in s
 
 std::vector<Vec<float>> trajectory;
@@ -103,7 +103,7 @@ void increaseTime() {
 	currentVel += (k1v + k2v) * (deltaTime / 2);
 	*/
 
-	// Runge-Kutta 4
+	// Runge - Kutta 4
 	trajectory.push_back(Vec<float>(currentPos));
 	static Vec<float> kx[4], kv[4];
 
@@ -154,10 +154,7 @@ void drawScene() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClearColor(1.0, 1.0, 1.0, 0.0);
 
-	glLoadIdentity();
-	glTranslatef(cameraPos[0], cameraPos[1], cameraPos[2] - 200.0);
-	glRotatef(angle, 0.0, 1.0, 0.0);
-	glScalef(zoom, zoom, zoom);
+	camera.drawCamera();
 
 	glColor3f(1.0, 1.0, 1.0);
 	glLineWidth(2.0);
@@ -201,47 +198,15 @@ void resize(GLFWwindow* window, int w, int h) {
 	glViewport(0, 0, w, h);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glFrustum(-75.0, 75.0, -75.0, 75.0, 100.0, 400.0);
+	
+	float aspect = (float)w / (float)h;
+	float viewSize = 75.0f;
+
+	if (aspect >= 1.0f) glFrustum(-viewSize * aspect, viewSize * aspect, -viewSize, viewSize, 100.0, 400.0);
+	else glFrustum(-viewSize, viewSize, -viewSize / aspect, viewSize / aspect, 100.0, 400.0);
+
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-}
-
-void keyInput(GLFWwindow* window, int key, int scancode, int action, int mods) {
-	if (action == GLFW_PRESS || action == GLFW_REPEAT) {
-		switch (key) {
-		case GLFW_KEY_ESCAPE:
-			glfwSetWindowShouldClose(window, GLFW_TRUE);
-			break;
-		case GLFW_KEY_Y:
-			if (mods & GLFW_MOD_SHIFT)
-				angle--;
-			else
-				angle++;
-			break;
-		case GLFW_KEY_KP_ADD:
-		case GLFW_KEY_EQUAL:
-			zoom *= 1.1;
-			break;
-		case GLFW_KEY_KP_SUBTRACT:
-		case GLFW_KEY_MINUS:
-			zoom /= 1.1;
-			break;
-		case GLFW_KEY_DOWN:
-			cameraPos[1]++;
-			break;
-		case GLFW_KEY_UP:
-			cameraPos[1]--;
-			break;
-		case GLFW_KEY_LEFT:
-			cameraPos[0]++;
-			break;
-		case GLFW_KEY_RIGHT:
-			cameraPos[0]--;
-			break;
-		default:
-			break;
-		}
-	}
 }
 
 int main() {
@@ -272,12 +237,11 @@ int main() {
 	glfwSetFramebufferSizeCallback(window, resize);
 	resize(window, 600, 600); // Set initial viewport size
 
-	glfwSetKeyCallback(window, keyInput);
-
 	// Animation timing
 	double lastTime = glfwGetTime();
 	double accumulator = 0.0;
 
+	camera = CameraController({0.0, 0.0}, 0.0, 1.0, 0.025, 0.05, 0.001);
 	while (!glfwWindowShouldClose(window)) {
 		double currentTime = glfwGetTime();
 		double frameTime = currentTime - lastTime;
@@ -290,6 +254,8 @@ int main() {
 			accumulator -= deltaTime;
 		}
 
+
+		camera.moveCamera(window);
 		drawScene();
 		glfwSwapBuffers(window);
 		glfwPollEvents();
