@@ -6,7 +6,7 @@ It is a new project, so the code right now is a bit messy.
 
 ### Dependencies
 For the computer graphics side, I'm using the OpenGL specification, alongside the [GLFW](https://github.com/glfw/glfw) and [GLAD](https://github.com/Dav1dde/glad) Libraries to render the objects on the screen.
-Also using my linear algebra library, [Mathss-Library](https://github.com/ivanrossi04/Math-Library), to compute vector operations in a cleaner way, making the code more readable.
+Also using [GLM](https://github.com/g-truc/glm), to compute vector operations for graphics and physics computation.
 
 ### TODO LIST
 ==Fix display issues==
