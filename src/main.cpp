@@ -8,7 +8,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <glad/glad.h>
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include "camera.hpp"
 
@@ -199,7 +199,7 @@ int main() {
 	}
 	glfwMakeContextCurrent(window);
 
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+	if (!gladLoadGL(glfwGetProcAddress)) {
 		std::cerr << "Failed to initialize GLAD\n";
 		return -1;
 	}
