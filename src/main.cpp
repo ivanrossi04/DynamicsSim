@@ -15,10 +15,10 @@
 static CameraController camera;
 
 static unsigned int axis;
-static float axis_length = 200.0;
+static float axis_length = 200.0f;
 
 static unsigned int square;
-static float border_width = 0.1;
+static float border_width = 0.1f;
 
 void buildCustomShapes() {
 
@@ -31,12 +31,12 @@ void buildCustomShapes() {
 
 	float width;
 	for (size_t i = 0; i <= axis_length / 5; i++) {
-		width = i % 5 ? 2.0 : 4.0;
-		glVertex3f(-width, -axis_length + i * 10.0, 0.0);
-		glVertex3f(width, -axis_length + i * 10.0, 0.0);
+		width = i % 5 ? 2.0f : 4.0f;
+		glVertex3f(-width, -axis_length + i * 10.0f, 0.0f);
+		glVertex3f(width, -axis_length + i * 10.0f, 0.0f);
 
-		glVertex3f(0.0, -axis_length + i * 10.0, -width);
-		glVertex3f(0.0, -axis_length + i * 10.0, width);
+		glVertex3f(0.0f, -axis_length + i * 10.0f, -width);
+		glVertex3f(0.0f, -axis_length + i * 10.0f, width);
 	}
 	glEnd();
 	glEndList();
@@ -58,15 +58,15 @@ static glm::vec3 currentPos(55.0f, 0.0f, 0.0f); // x_0 expressed in m
 static glm::vec3 currentVel(70.0f, 70.0f, 0.0f); // x_0 expressed in m/s
 static float currentTime = 0; // t_0 expressed in s
 
-static float deltaTime = 0.001; // deltat expressed in s
-static float deltaFrame = 0.02; // deltat expressed in s
+static float deltaTime = 0.001f; // deltat expressed in s
+static float deltaFrame = 0.02f; // deltat expressed in s
 
 std::vector<glm::vec3> trajectory;
 
 // forces applied
-static const float g = 9.806;
-static const float k = 1.2;
-static const float G = 900000;
+static const float g = 9.806f;
+static const float k = 1.2f;
+static const float G = 900000.0f;
 glm::vec3 f(glm::vec3 x, glm::vec3 v, float t) {
     // return -k * v + glm::vec3(0.0f, -mass * g, 0.0f); // gravitational force with air resistance;
     // return -k * x; // hooke's law (spring constant is equal in every direction)
@@ -103,15 +103,15 @@ void increaseTime() {
 void drawSolidSphere(float radius, int slices, int stacks) {
 	for (int i = 0; i < stacks; ++i) {
 		float lat0 = M_PI * (-0.5 + (float)i / stacks);
-		float z0 = sin(lat0), zr0 = cos(lat0);
+		float z0 = sinf(lat0), zr0 = cosf(lat0);
 
 		float lat1 = M_PI * (-0.5 + (float)(i + 1) / stacks);
-		float z1 = sin(lat1), zr1 = cos(lat1);
+		float z1 = sinf(lat1), zr1 = cosf(lat1);
 
 		glBegin(GL_QUAD_STRIP);
 		for (int j = 0; j <= slices; ++j) {
 			float lng = 2 * M_PI * (float)(j - 1) / slices;
-			float x = cos(lng), y = sin(lng);
+			float x = cosf(lng), y = sinf(lng);
 
 			glNormal3f(x * zr0, y * zr0, z0);
 			glVertex3f(radius * x * zr0, radius * y * zr0, radius * z0);
@@ -213,7 +213,7 @@ int main() {
 	double lastTime = glfwGetTime();
 	double accumulator = 0.0;
 
-	camera = CameraController(glm::vec3(0.0f, 0.0f, 0.0f), 0.0f, 1.0f, 0.025f, 0.05f, 0.001f);
+	camera = CameraController(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 1.0f, 0.025f, 0.05f, 0.001f);
 	while (!glfwWindowShouldClose(window)) {
 		double currentTime = glfwGetTime();
 		double frameTime = currentTime - lastTime;

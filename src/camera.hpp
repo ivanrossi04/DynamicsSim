@@ -9,7 +9,7 @@
 class CameraController {
 	private:
 		glm::vec3 cameraPos;
-		float angleY;
+		glm::vec3 angle;
 		float zoom;
 
 		float cameraSpeed;
@@ -17,9 +17,9 @@ class CameraController {
 		float zoomSpeed;
 
 	public:
-		CameraController(glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 0.0f), float angleY = 0.0f, float zoom = 1.0f, float cameraSpeed = 0.0f, float angularSpeed = 0.0f, float zoomSpeed = 0.0f) {
+		CameraController(glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 angle = glm::vec3(0.0f, 0.0f, 0.0f), float zoom = 1.0f, float cameraSpeed = 0.0f, float angularSpeed = 0.0f, float zoomSpeed = 0.0f) {
 			this->cameraPos = cameraPos;
-			this->angleY = angleY;
+			this->angle = angle;
 			this->zoom = zoom;
 			this->cameraSpeed = cameraSpeed;
 			this->angularSpeed = angularSpeed;
@@ -27,11 +27,11 @@ class CameraController {
 		}
 
 		glm::vec3 getPosition() { return cameraPos; }
-		float getAngle() { return angleY; }
+		glm::vec3 getAngle() { return angle; }
 		float getZoom() { return zoom; }
 
 		void setPosition(glm::vec3 pos) { cameraPos = pos; }
-		void setAngle(float angle) { angleY = angle; }
+		void setAngle(float angle) { angle = angle; }
 		void setZoom(float zoom) { this->zoom = zoom; }
 
 		void setCameraSpeed(float speed) { cameraSpeed = speed; }
@@ -51,7 +51,9 @@ class CameraController {
 
 			// rotation around y axis
 			bool shiftPressed = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
-			if (glfwGetKey(window, GLFW_KEY_Y) == GLFW_PRESS) angleY += angularSpeed * (shiftPressed ? 1.0f : -1.0f);
+			if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) angle.x += angularSpeed * (shiftPressed ? 1.0f : -1.0f);
+			if (glfwGetKey(window, GLFW_KEY_Y) == GLFW_PRESS) angle.y += angularSpeed * (shiftPressed ? 1.0f : -1.0f);
+			if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS) angle.z += angularSpeed * (shiftPressed ? 1.0f : -1.0f);
 
 			// zoom
 			if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) zoom *= 1 + zoomSpeed;
@@ -61,7 +63,10 @@ class CameraController {
 		void drawCamera() {
 			glLoadIdentity();
 			glTranslatef(cameraPos.x, cameraPos.y, -200.0);
-			glRotatef(angleY, 0.0, 1.0, 0.0);
+			glRotatef(angle.x, 1.0f, 0.0f, 0.0f); // Rotate around X axis
+			glRotatef(angle.y, 0.0f, 1.0f, 0.0f); // Rotate around Y axis
+			glRotatef(angle.z, 0.0f, 0.0f, 1.0f); // Rotate around Z axis
+
 			glScalef(zoom, zoom, zoom);
 		}
 };
