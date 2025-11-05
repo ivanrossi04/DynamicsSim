@@ -2,7 +2,7 @@
 
 #define _USE_MATH_DEFINES
 #include <iostream>
-#include <vector>
+#include <deque>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -11,46 +11,9 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include "camera.hpp"
+#include "graphics.hpp"
 
 static CameraController camera;
-
-static unsigned int axis;
-static float axis_length = 200.0f;
-
-static unsigned int square;
-static float border_width = 0.1f;
-
-void buildCustomShapes() {
-
-	axis = glGenLists(1);
-	glNewList(axis, GL_COMPILE);
-	glBegin(GL_LINES);
-	glColor3f(0.0, 0.0, 0.0);
-	glVertex3f(0.0, -axis_length, 0.0);
-	glVertex3f(0.0, axis_length, 0.0);
-
-	float width;
-	for (size_t i = 0; i <= axis_length / 5; i++) {
-		width = i % 5 ? 2.0f : 4.0f;
-		glVertex3f(-width, -axis_length + i * 10.0f, 0.0f);
-		glVertex3f(width, -axis_length + i * 10.0f, 0.0f);
-
-		glVertex3f(0.0f, -axis_length + i * 10.0f, -width);
-		glVertex3f(0.0f, -axis_length + i * 10.0f, width);
-	}
-	glEnd();
-	glEndList();
-
-	square = glGenLists(1);
-	glNewList(square, GL_COMPILE);
-	glBegin(GL_POLYGON);
-	glVertex3f(-1.0, -1.0, 0.0);
-	glVertex3f(1.0, -1.0, 0.0);
-	glVertex3f(1.0, 1.0, 0.0);
-	glVertex3f(-1.0, 1.0, 0.0);
-	glEnd();
-	glEndList();
-}
 
 static float R = 5; // ball radius expressed in m
 static const float mass = 1; // mass expressed in kg
@@ -61,7 +24,8 @@ static float currentTime = 0; // t_0 expressed in s
 static float deltaTime = 0.001f; // deltat expressed in s
 static float deltaFrame = 0.02f; // deltat expressed in s
 
-std::vector<glm::vec3> trajectory;
+const int MAX_POINTS = 10000;
+std::deque<glm::vec3> trajectory;
 
 // forces applied
 static const float g = 9.806f;
@@ -73,9 +37,10 @@ glm::vec3 f(glm::vec3 x, glm::vec3 v, float t) {
     return (-G / (float)pow(glm::length(x), 3)) * x; // kepler's problem
 }
 
-// Routine to increase the rotation angle.
+// Routine to increase the time of the simulation
 void increaseTime() {
     // Runge - Kutta 4
+	if(trajectory.size() >= MAX_POINTS) trajectory.pop_front();
     trajectory.push_back(currentPos);
     static glm::vec3 kx[4], kv[4];
 
@@ -100,28 +65,6 @@ void increaseTime() {
     currentVel += deltaTime / 6.0f * (kv[0] + 2.0f * kv[1] + 2.0f * kv[2] + kv[3]);
 }
 
-void drawSolidSphere(float radius, int slices, int stacks) {
-	for (int i = 0; i < stacks; ++i) {
-		float lat0 = M_PI * (-0.5 + (float)i / stacks);
-		float z0 = sinf(lat0), zr0 = cosf(lat0);
-
-		float lat1 = M_PI * (-0.5 + (float)(i + 1) / stacks);
-		float z1 = sinf(lat1), zr1 = cosf(lat1);
-
-		glBegin(GL_QUAD_STRIP);
-		for (int j = 0; j <= slices; ++j) {
-			float lng = 2 * M_PI * (float)(j - 1) / slices;
-			float x = cosf(lng), y = sinf(lng);
-
-			glNormal3f(x * zr0, y * zr0, z0);
-			glVertex3f(radius * x * zr0, radius * y * zr0, radius * z0);
-			glNormal3f(x * zr1, y * zr1, z1);
-			glVertex3f(radius * x * zr1, radius * y * zr1, radius * z1);
-		}
-		glEnd();
-	}
-}
-
 void drawScene() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glClearColor(1.0, 1.0, 1.0, 0.0);
@@ -131,16 +74,7 @@ void drawScene() {
     glColor3f(1.0, 1.0, 1.0);
     glLineWidth(2.0);
 
-    // -- Draw Axis --
-    glPushMatrix();
-    glCallList(axis); // Execute display list: y axis
-
-    glRotatef(-90, 0.0, 0.0, 1.0);
-    glCallList(axis); // x axis
-
-    glRotatef(90, 1.0, 0.0, 0.0);
-    glCallList(axis); // z axis
-    glPopMatrix();
+	Graphics::drawAxis();
 
     // -- Draw Trajectory --
     size_t size = trajectory.size();
@@ -151,16 +85,14 @@ void drawScene() {
     }
     glEnd();
 
-    // -- Draw Ball --
-    glTranslatef(currentPos.x, currentPos.y, currentPos.z);
-    drawSolidSphere(5.0, 20, 20);
+    Graphics::drawSphere(R, currentPos);
 
     glFlush();
 }
 
 // Initialization routine
 void setup() {
-	buildCustomShapes();
+	Graphics::initGraphics();
 	glEnable(GL_DEPTH_TEST);
 	glClearColor(1.0, 1.0, 1.0, 0.0);
 }
@@ -171,9 +103,9 @@ void resize(GLFWwindow* window, int w, int h) {
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	
+	// set aspect ratio to avoid deformations
 	float aspect = (float)w / (float)h;
 	float viewSize = 75.0f;
-
 	if (aspect >= 1.0f) glFrustum(-viewSize * aspect, viewSize * aspect, -viewSize, viewSize, 100.0, 400.0);
 	else glFrustum(-viewSize, viewSize, -viewSize / aspect, viewSize / aspect, 100.0, 400.0);
 
@@ -182,6 +114,7 @@ void resize(GLFWwindow* window, int w, int h) {
 }
 
 int main() {
+	// Initialize the window
 	if (!glfwInit()) {
 		std::cerr << "Failed to initialize GLFW\n";
 		return -1;
@@ -208,12 +141,15 @@ int main() {
 
 	glfwSetFramebufferSizeCallback(window, resize);
 	resize(window, 600, 600); // Set initial viewport size
-
+	
+	// Setup animation variables
 	// Animation timing
 	double lastTime = glfwGetTime();
 	double accumulator = 0.0;
 
 	camera = CameraController(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 1.0f, 0.025f, 0.05f, 0.001f);
+	
+	// Enter the update cycle
 	while (!glfwWindowShouldClose(window)) {
 		double currentTime = glfwGetTime();
 		double frameTime = currentTime - lastTime;
@@ -232,6 +168,8 @@ int main() {
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
+
+	Graphics::deleteGraphics();
 
 	glfwDestroyWindow(window);
 	glfwTerminate();

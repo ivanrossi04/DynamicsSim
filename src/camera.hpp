@@ -25,7 +25,8 @@ class CameraController {
 			this->angularSpeed = angularSpeed;
 			this->zoomSpeed = zoomSpeed;
 		}
-
+		
+		// getters and setters
 		glm::vec3 getPosition() { return cameraPos; }
 		glm::vec3 getAngle() { return angle; }
 		float getZoom() { return zoom; }
@@ -38,6 +39,7 @@ class CameraController {
 		void setAngularSpeed(float speed) { angularSpeed = speed; }
 		void setZoomSpeed(float speed) { zoomSpeed = speed; }
 
+		// move the camera in the window space
 		void moveCamera(GLFWwindow* window) {
 			// movement along x and y axis
 			bool horizontal = (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) ^ (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS);
