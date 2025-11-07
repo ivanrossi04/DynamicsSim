@@ -13,57 +13,12 @@
 #include "camera.hpp"
 #include "graphics.hpp"
 
+#include "physics.hpp"
+
 static CameraController camera;
-
-static float R = 5; // ball radius expressed in m
-static const float mass = 1; // mass expressed in kg
-static glm::vec3 currentPos(55.0f, 0.0f, 0.0f); // x_0 expressed in m
-static glm::vec3 currentVel(70.0f, 70.0f, 0.0f); // x_0 expressed in m/s
-static float currentTime = 0; // t_0 expressed in s
-
-static float deltaTime = 0.001f; // deltat expressed in s
-static float deltaFrame = 0.02f; // deltat expressed in s
 
 const int MAX_POINTS = 10000;
 std::deque<glm::vec3> trajectory;
-
-// forces applied
-static const float g = 9.806f;
-static const float k = 1.2f;
-static const float G = 900000.0f;
-glm::vec3 f(glm::vec3 x, glm::vec3 v, float t) {
-    // return -k * v + glm::vec3(0.0f, -mass * g, 0.0f); // gravitational force with air resistance;
-    // return -k * x; // hooke's law (spring constant is equal in every direction)
-    return (-G / (float)pow(glm::length(x), 3)) * x; // kepler's problem
-}
-
-// Routine to increase the time of the simulation
-void increaseTime() {
-    // Runge - Kutta 4
-	if(trajectory.size() >= MAX_POINTS) trajectory.pop_front();
-    trajectory.push_back(currentPos);
-    static glm::vec3 kx[4], kv[4];
-
-    kx[0] = currentVel;
-    static glm::vec3 force = f(currentPos, kx[0], currentTime);
-    kv[0] = force * (1.0f / mass);
-
-    kx[1] = currentVel + kv[0] * (deltaTime / 2.0f);
-    force = f(currentPos + kx[0] * (deltaTime/2.0f), kx[1], currentTime + deltaTime / 2.0f);
-    kv[1] = force * (1.0f / mass);
-
-    kx[2] = currentVel + kv[1] * (deltaTime / 2.0f);
-    force = f(currentPos + kx[1] * (deltaTime / 2.0f), kx[2], currentTime + deltaTime / 2.0f);
-    kv[2] = force * (1.0f / mass);
-
-    kx[3] = currentVel + kv[2] * deltaTime;
-    force = f(currentPos + kx[2] * deltaTime, kx[3], currentTime + deltaTime);
-    kv[3] = force * (1.0f / mass);
-
-    currentTime += deltaTime;
-    currentPos += deltaTime / 6.0f * (kx[0] + 2.0f * kx[1] + 2.0f * kx[2] + kx[3]);
-    currentVel += deltaTime / 6.0f * (kv[0] + 2.0f * kv[1] + 2.0f * kv[2] + kv[3]);
-}
 
 void drawScene() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -85,7 +40,7 @@ void drawScene() {
     }
     glEnd();
 
-    Graphics::drawSphere(R, currentPos);
+    Graphics::drawSphere(5.0f, trajectory.back());
 
     glFlush();
 }
@@ -148,7 +103,21 @@ int main() {
 	double accumulator = 0.0;
 
 	camera = CameraController(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 1.0f, 0.025f, 0.05f, 0.001f);
-	
+
+	static float R = 5; // ball radius expressed in m
+	static const float mass = 5.97219e8f; // mass of Earth in kg / 1e16
+	static glm::vec3 currentPos(20.0f, 20.0f, 0.0f); // x_0 expressed in m
+	static glm::vec3 currentVel(0.0f, -20.0f, 0.0f); // x_0 expressed in m/s
+	trajectory.push_back(currentPos);
+
+	static float currentTime = 0; // t_0 expressed in s
+	static float deltaTime = 0.001f; // deltat expressed in s
+	static float deltaFrame = 0.02f; // deltat expressed in s
+
+	Physics::Force* force = new Physics::GravitationalForce(1.98847e14f, mass); // mass of Sun in kg / 1e16
+
+	Propagation::generalizedVector state(currentPos, currentVel);
+
 	// Enter the update cycle
 	while (!glfwWindowShouldClose(window)) {
 		double currentTime = glfwGetTime();
@@ -158,10 +127,14 @@ int main() {
 		accumulator += frameTime;
 
 		while (accumulator >= deltaTime) {
-			increaseTime();
+			state = Propagation::rungeKutta4(force, state, mass, currentTime, deltaTime);
+
+			if(trajectory.size() >= MAX_POINTS) trajectory.pop_front();
+			trajectory.push_back(state.position);
+
+			currentTime += deltaTime;
 			accumulator -= deltaTime;
 		}
-
 
 		camera.moveCamera(window);
 		drawScene();
