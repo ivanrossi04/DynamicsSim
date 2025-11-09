@@ -1,16 +1,10 @@
-#ifndef GRAPHICS_HPP
-#define GRAPHICS_HPP
-
-#define _USE_MATH_DEFINES
-#include <cmath>
-#include <glad/gl.h>
-#include <glm/glm.hpp>
+#include "graphics.hpp"
 
 namespace Graphics {
 
     unsigned int axis = 0;
 
-    void initGraphics(float axis_length = 200.0f) {
+    void initGraphics(float axis_length) {
         axis = glGenLists(1);
         glNewList(axis, GL_COMPILE);
         glBegin(GL_LINES);
@@ -51,7 +45,7 @@ namespace Graphics {
         glPopMatrix();
     }
 
-    void drawSphere(float radius, glm::vec3 position, int slices = 20, int stacks = 20) {
+    void drawSphere(float radius, glm::vec3 position, int slices, int stacks) {
         glTranslatef(position.x, position.y, position.z);
 
         for (int i = 0; i < stacks; ++i) {
@@ -75,5 +69,3 @@ namespace Graphics {
         }
     }
 }
-
-#endif

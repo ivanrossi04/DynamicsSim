@@ -5,14 +5,11 @@
 #include <deque>
 
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include "camera.hpp"
 #include "graphics.hpp"
-
 #include "physics.hpp"
 
 static CameraController camera;

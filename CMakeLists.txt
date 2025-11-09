@@ -35,7 +35,13 @@ glad_add_library(glad REPRODUCIBLE API gl:compatibility=4.6)
 
 find_package(OpenGL REQUIRED)
 
-add_executable(${PROJECT_NAME} src/main.cpp)
+# Collect all source files from lib directory
+file(GLOB LIB_SOURCES "lib/*.cpp")
+
+add_executable(${PROJECT_NAME} 
+	src/main.cpp
+	${LIB_SOURCES}
+)
 
 target_link_libraries(${PROJECT_NAME}
   PRIVATE
@@ -46,6 +52,8 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE 
+	${CMAKE_SOURCE_DIR}/include
+	${CMAKE_SOURCE_DIR}/lib
 	${CMAKE_SOURCE_DIR}/src
 )
 
