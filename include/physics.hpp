@@ -75,11 +75,11 @@ namespace Physics {
         public:
             ElectricForce(float q1, float q2, const glm::vec3& anchor = glm::vec3(0.0f));
 
-            void getCharge1(float *q1);
-            void getCharge2(float *q2);
+            float getCharge1() const;
+            float getCharge2() const;
 
-            void setCharge1(float *q1);
-            void setCharge2(float *q2);
+            void setCharge1(float q1);
+            void setCharge2(float q2);
 
             /// @brief Set the anchor point for the force, which represents the position of the second charge
             void setAnchorPoint(const glm::vec3& anchor);
@@ -96,8 +96,11 @@ namespace Physics {
         public:
             GravitationalForce(float m1, float m2, const glm::vec3& anchor = glm::vec3(0.0f));
 
-            void setMass1(float *m1);
-            void setMass2(float *m2);
+            float getMass1() const;
+            float getMass2() const;
+
+            void setMass1(float m1);
+            void setMass2(float m2);
             void setAnchorPoint(const glm::vec3& anchor);
 
             glm::vec3 computeForce(const glm::vec3& position, const glm::vec3& velocity, float time) const override;
@@ -151,8 +154,41 @@ namespace Propagation {
             generalizedVector(const glm::vec3& pos, const glm::vec3& vel);
     };
 
+    /**
+     * @brief Propagates the state of a particle using the explicit Euler method.
+     * 
+     * @param f force acting on the particle
+     * @param state current state of the particle
+     * @param mass mass of the particle
+     * @param currentTime current time
+     * @param deltaTime time step for propagation
+     * @return generalizedVector new state of the particle after propagation
+     */
     generalizedVector explicitEuler(Physics::Force* f, const generalizedVector& state, const float mass, const float currentTime, const float deltaTime);
+    
+    /**
+     * @brief Propagates the state of a particle using the 4th-order Runge-Kutta method.
+     * 
+     * @param f force acting on the particle
+     * @param state current state of the particle
+     * @param mass mass of the particle
+     * @param currentTime current time
+     * @param deltaTime time step for propagation
+     * @return generalizedVector new state of the particle after propagation
+     */
     generalizedVector rungeKutta4(Physics::Force* f, const generalizedVector& state, const float mass, const float currentTime, const float deltaTime);
+    
+    /**
+     * @brief Propagates the state of a particle using the symplectic Euler method.
+     * 
+     * @param f force acting on the particle
+     * @param state current state of the particle
+     * @param mass mass of the particle
+     * @param currentTime current time
+     * @param deltaTime time step for propagation
+     * @return generalizedVector new state of the particle after propagation
+     */
+    generalizedVector simplecticEuler(Physics::Force* f, const generalizedVector& state, const float mass, const float currentTime, const float deltaTime);
 }
 
 #endif

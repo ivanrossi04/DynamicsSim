@@ -1,11 +1,19 @@
 #include "physics.hpp"
 
-// TODO: implement removeForce in CompositeForce, getCharge1, getCharge2 in ElectricForce 
 namespace Physics {
 
     // CompositeForce implementations
     void CompositeForce::addForce(const Force& force) {
         forces.push_back(&force);
+    }
+
+    void CompositeForce::removeForce(const Force& force) {
+        for (std::vector<const Force*>::iterator it = forces.begin(); it != forces.end(); ++it) {
+            if (*it == &force) {
+                forces.erase(it);
+                break;
+            }
+        }
     }
 
     glm::vec3 CompositeForce::computeForce(const glm::vec3& position, const glm::vec3& velocity, float time) const {
@@ -32,12 +40,20 @@ namespace Physics {
     ElectricForce::ElectricForce(float q1, float q2, const glm::vec3& anchor) 
         : charge_1(q1), charge_2(q2), anchorPoint(anchor) {}
 
-    void ElectricForce::setCharge1(float *q1) {
-        charge_1 = *q1;
+    float ElectricForce::getCharge1() const {
+        return charge_1;
     }
 
-    void ElectricForce::setCharge2(float *q2) {
-        charge_2 = *q2;
+    float ElectricForce::getCharge2() const {
+        return charge_2;
+    }
+
+    void ElectricForce::setCharge1(float q1) {
+        charge_1 = q1;
+    }
+
+    void ElectricForce::setCharge2(float q2) {
+        charge_2 = q2;
     }
 
     void ElectricForce::setAnchorPoint(const glm::vec3& anchor) {
@@ -56,12 +72,20 @@ namespace Physics {
     GravitationalForce::GravitationalForce(float m1, float m2, const glm::vec3& anchor) 
         : mass_1(m1), mass_2(m2), anchorPoint(anchor) {}
 
-    void GravitationalForce::setMass1(float *m1) {
-        mass_1 = *m1;
+    float GravitationalForce::getMass1() const {
+        return mass_1;
     }
 
-    void GravitationalForce::setMass2(float *m2) {
-        mass_2 = *m2;
+    float GravitationalForce::getMass2() const {
+        return mass_2;
+    }
+
+    void GravitationalForce::setMass1(float m1) {
+        mass_1 = m1;
+    }
+
+    void GravitationalForce::setMass2(float m2) {
+        mass_2 = m2;
     }
 
     void GravitationalForce::setAnchorPoint(const glm::vec3& anchor) {
@@ -125,6 +149,7 @@ namespace Propagation {
         : position(pos), velocity(vel) {}
 
     // Propagation methods
+
     generalizedVector explicitEuler(Physics::Force* f, const generalizedVector& state, const float mass, const float currentTime, const float deltaTime) {
         glm::vec3 force = f->computeForce(state.position, state.velocity, currentTime);
 
@@ -158,4 +183,16 @@ namespace Propagation {
             state.velocity + deltaTime / 6.0f * (kv[0] + 2.0f * kv[1] + 2.0f * kv[2] + kv[3])
         };
     }
+
+    generalizedVector simplecticEuler(Physics::Force* f, const generalizedVector& state, const float mass, const float currentTime, const float deltaTime) {
+        glm::vec3 force = f->computeForce(state.position, state.velocity, currentTime);
+        glm::vec3 newVelocity = state.velocity + (force / mass) * deltaTime;
+
+        return {
+            state.position + newVelocity * deltaTime,
+            newVelocity
+        };
+    }
+
 }
+
