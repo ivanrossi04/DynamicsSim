@@ -2,6 +2,34 @@
 
 namespace Physics {
 
+    // Particle implementations
+    Particle::Particle(float m, const glm::vec3& pos, const glm::vec3& vel) 
+        : mass(m), position(pos), velocity(vel) {}
+
+    glm::vec3 Particle::getPosition() {
+        return position;
+    }
+
+    glm::vec3 Particle::getVelocity() {
+        return velocity;
+    }
+
+    float Particle::getMass() {
+        return mass;
+    }
+
+    void Particle::setPosition(const glm::vec3& pos) {
+        position = pos;
+    }
+    
+    void Particle::setVelocity(const glm::vec3& vel) {
+        velocity = vel;
+    }
+    
+    void Particle::setMass(float m) {
+        mass = m;
+    }
+
     // CompositeForce implementations
     void CompositeForce::addForce(const Force& force) {
         forces.push_back(&force);
@@ -159,6 +187,20 @@ namespace Propagation {
         };
     }
 
+    void explicitEuler(Physics::Particle& particle, const float currentTime, const float deltaTime) {
+        generalizedVector newState = explicitEuler(
+            &particle.appliedForces, 
+            generalizedVector(particle.getPosition(),
+            particle.getVelocity()),
+            particle.getMass(), 
+            currentTime, 
+            deltaTime
+        );
+
+        particle.setPosition(newState.position);
+        particle.setVelocity(newState.velocity);
+    }
+
     generalizedVector rungeKutta4(Physics::Force* f, const generalizedVector& state, const float mass, const float currentTime, const float deltaTime) {
         static glm::vec3 kx[4], kv[4];
 
@@ -184,6 +226,20 @@ namespace Propagation {
         };
     }
 
+    void rungeKutta4(Physics::Particle& particle, const float currentTime, const float deltaTime) {
+        generalizedVector newState = rungeKutta4(
+            &particle.appliedForces,
+            generalizedVector(particle.getPosition(),
+            particle.getVelocity()),
+            particle.getMass(), 
+            currentTime, 
+            deltaTime
+        );
+
+        particle.setPosition(newState.position);
+        particle.setVelocity(newState.velocity);
+    }
+
     generalizedVector simplecticEuler(Physics::Force* f, const generalizedVector& state, const float mass, const float currentTime, const float deltaTime) {
         glm::vec3 force = f->computeForce(state.position, state.velocity, currentTime);
         glm::vec3 newVelocity = state.velocity + (force / mass) * deltaTime;
@@ -192,6 +248,20 @@ namespace Propagation {
             state.position + newVelocity * deltaTime,
             newVelocity
         };
+    }
+
+    void simplecticEuler(Physics::Particle& particle, const float currentTime, const float deltaTime) {
+        generalizedVector newState = simplecticEuler(
+            &particle.appliedForces, 
+            generalizedVector(particle.getPosition(),
+            particle.getVelocity()),
+            particle.getMass(), 
+            currentTime, 
+            deltaTime
+        );
+
+        particle.setPosition(newState.position);
+        particle.setVelocity(newState.velocity);
     }
 
 }

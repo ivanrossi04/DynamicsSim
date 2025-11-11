@@ -142,6 +142,26 @@ namespace Physics {
             glm::vec3 computeForce(const glm::vec3& position, const glm::vec3& velocity, float time) const override;
             float computeEnergy(const glm::vec3& position, const glm::vec3& velocity, float time) const override;
     };
+
+    // Particle class representing a physical particle in the simulation
+    class Particle {
+        private:
+            glm::vec3 position;
+            glm::vec3 velocity;
+            float mass;
+        public:
+            CompositeForce appliedForces;
+
+            Particle(float m, const glm::vec3& pos = glm::vec3(0.0f), const glm::vec3& vel = glm::vec3(0.0f));
+
+            glm::vec3 getPosition();
+            glm::vec3 getVelocity();
+            float getMass();
+
+            void setPosition(const glm::vec3& pos);
+            void setVelocity(const glm::vec3& vel);
+            void setMass(float m);
+    };
 }
 
 namespace Propagation {
@@ -165,6 +185,7 @@ namespace Propagation {
      * @return generalizedVector new state of the particle after propagation
      */
     generalizedVector explicitEuler(Physics::Force* f, const generalizedVector& state, const float mass, const float currentTime, const float deltaTime);
+    void explicitEuler(Physics::Particle& particle, const float currentTime, const float deltaTime);
     
     /**
      * @brief Propagates the state of a particle using the 4th-order Runge-Kutta method.
@@ -177,7 +198,7 @@ namespace Propagation {
      * @return generalizedVector new state of the particle after propagation
      */
     generalizedVector rungeKutta4(Physics::Force* f, const generalizedVector& state, const float mass, const float currentTime, const float deltaTime);
-    
+    void rungeKutta4(Physics::Particle& particle, const float currentTime, const float deltaTime);
     /**
      * @brief Propagates the state of a particle using the symplectic Euler method.
      * 
@@ -189,6 +210,7 @@ namespace Propagation {
      * @return generalizedVector new state of the particle after propagation
      */
     generalizedVector simplecticEuler(Physics::Force* f, const generalizedVector& state, const float mass, const float currentTime, const float deltaTime);
+    void simplecticEuler(Physics::Particle& particle, const float currentTime, const float deltaTime);
 }
 
 #endif

@@ -101,10 +101,11 @@ int main() {
 
 	camera = CameraController(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 1.0f, 0.025f, 0.05f, 0.001f);
 
-	static float R = 5; // ball radius expressed in m
 	static const float mass = 5.97219e8f; // mass of Earth in kg / 1e16
 	static glm::vec3 currentPos(20.0f, 20.0f, 0.0f); // x_0 expressed in m
 	static glm::vec3 currentVel(0.0f, -20.0f, 0.0f); // x_0 expressed in m/s
+
+	Physics::Particle particle(mass, currentPos, currentVel);
 	trajectory.push_back(currentPos);
 
 	static float currentTime = 0; // t_0 expressed in s
@@ -112,8 +113,7 @@ int main() {
 	static float deltaFrame = 0.02f; // deltat expressed in s
 
 	Physics::Force* force = new Physics::GravitationalForce(1.98847e14f, mass); // mass of Sun in kg / 1e16
-
-	Propagation::generalizedVector state(currentPos, currentVel);
+	particle.appliedForces.addForce(*force);
 
 	// Enter the update cycle
 	while (!glfwWindowShouldClose(window)) {
@@ -124,10 +124,10 @@ int main() {
 		accumulator += frameTime;
 
 		while (accumulator >= deltaTime) {
-			state = Propagation::rungeKutta4(force, state, mass, currentTime, deltaTime);
+			Propagation::rungeKutta4(particle, currentTime, deltaTime);
 
 			if(trajectory.size() >= MAX_POINTS) trajectory.pop_front();
-			trajectory.push_back(state.position);
+			trajectory.push_back(particle.getPosition());
 
 			currentTime += deltaTime;
 			accumulator -= deltaTime;
